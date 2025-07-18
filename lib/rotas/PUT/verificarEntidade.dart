@@ -6,7 +6,17 @@ Future<Response> verificarEntidade(Request request, String id) async {
 
   // Lê e valida o corpo da requisição
   final body = await request.readAsString();
-  final data = jsonDecode(body);
+
+  if(body.trim().isEmpty){
+    return Response.badRequest(body: 'A requisição deve conter pelo menos uma especificação');
+  }
+
+  dynamic data;
+  try{
+    data = jsonDecode(body);
+  }catch(e){
+    return Response.badRequest(body: 'JSON inválido: ${e.toString()}');
+  }
 
   if (data['verificado'] != 'ok') {
     return Response.badRequest(body: jsonEncode({'erro': 'Corpo inválido. Esperado: {"verificado":"ok"}'}));

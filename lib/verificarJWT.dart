@@ -4,14 +4,28 @@ import 'package:dart_jsonwebtoken/dart_jsonwebtoken.dart';
 final _chaveSecreta = 'chave_api_tradicional';
 
 Middleware verificarJWTMiddleware() {
+
+  // Lista de rotas que NÃO precisam de autenticação
+  final rotasPublicas = {
+    'logar',
+    'cadastroEventos',
+    'cadastroEntidades',
+    'entidadesVerificar',
+    'eventosVerificar',
+    'listarEntidades',
+    'listarEventos',
+    'procuraEntidades',
+    'procuraEventos',
+  };
+
   return (Handler innerHandler) {
     return (Request request) async {
-      final tentativeResponse = await innerHandler(request);
+      final path = request.url.path;
 
-      if (tentativeResponse.statusCode == 404) {
-        return tentativeResponse;
+      if (rotasPublicas.contains(path)) {
+        return await innerHandler(request); // pula verificação
       }
-
+      
       final authorization = request.headers['Authorization'];
 
       if (authorization == null || !authorization.startsWith('Bearer ')) {

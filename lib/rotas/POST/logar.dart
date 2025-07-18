@@ -35,12 +35,12 @@ Future<Response> logar(Request request) async {
       'email': usuario['email'],
       'login': usuario['login'],
       'admin': usuario['admin'],
-      'exp': DateTime.now().add(Duration(minutes: 30)).millisecondsSinceEpoch ~/ 1000,
+      'exp': DateTime.now().add(Duration(hours: 1)).millisecondsSinceEpoch ~/ 1000,
     },
     issuer: 'minha_api',
   );
 
-  final token = jwt.sign(SecretKey('minha_chave_secreta'));
+  final token = jwt.sign(SecretKey('chave_api_tradicional'));
 
   return Response.ok(
     jsonEncode({'token': token}),

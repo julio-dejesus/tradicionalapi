@@ -4,7 +4,17 @@ import '../../database.dart';
 
 Future<Response> procuraEntidade(Request request) async {
   final body = await request.readAsString();
-  final data = jsonDecode(body);
+
+  if(body.trim().isEmpty){
+    return Response.badRequest(body: 'A requisição deve conter pelo menos uma especificação');
+  }
+
+  dynamic data;
+  try{
+    data = jsonDecode(body);
+  }catch(e){
+    return Response.badRequest(body: 'JSON inválido: ${e.toString()}');
+  }
 
   // Não irá filtrar por "verificado" pois este tem uma classe específica.
   final camposValidos = ['id', 'sigla', 'nome', 'fundado', 'rt', 'cidade', 'endereco'];
