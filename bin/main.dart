@@ -58,12 +58,12 @@ void main() async {
       .add(publicHandler)
       .handler;
 
-  //final server = await io.serve(handler, InternetAddress.anyIPv4, 8080);// Inicia o servidor na porta 8080
-  final server = await io.serve(
-      handler,
-      InternetAddress.anyIPv4,
-      //int.parse(Platform.environment['PORT'] ?? '8080'));//altera para que o endpoint possa definir a porta
-      8080);
+  final server = await io.serve(handler, InternetAddress.anyIPv4, // Inicia o servidor na porta 8080
+  //final server = await io.serve(
+      //handler,
+      //InternetAddress.anyIPv4,
+      int.parse(Platform.environment['PORT'] ?? '8080'));//altera para que o endpoint possa definir a porta
+      //8080);
 
   print('Servidor rodando: http://${server.address.address}:${server.port}');
 }
