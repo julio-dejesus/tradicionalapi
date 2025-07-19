@@ -10,7 +10,7 @@ Para usar esta API você precisa utilizar um cliente HTTP como:
 [Insomnia](https://insomnia.rest/) ou até mesmo `curl` no terminal.
 
 A API está hospedada em:  
-👉 [https://api-tradicional.onrender.com](https://tradicionalapi.onrender.com/)
+👉 https://tradicionalapi.onrender.com/
 
 Basta enviar as requisições para esse endereço conforme os endpoints descritos abaixo.
 
