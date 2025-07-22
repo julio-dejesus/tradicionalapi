@@ -33,7 +33,11 @@ void main() async {
     ..get('/listarEntidades', listarEntidades)
     ..get('/listarEventos', listarEventos)
     ..get('/procuraEntidades', procuraEntidade)
-    ..get('/procuraEventos', procuraEventos);
+    ..get('/procuraEventos', procuraEventos)
+    ..get('/', (Request req) {
+    return Response.ok('API Tradicional rodando');
+    })
+  ;
 
   final protectedRouter = Router()
     ..post('/cadastroUsuarios', cadastroUsuarios)
