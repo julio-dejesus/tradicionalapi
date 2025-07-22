@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 import 'package:shelf_router/shelf_router.dart';
 import 'package:tradicional/rotas/GET/entidadesVerificar.dart';
@@ -25,6 +26,11 @@ void main() async {
   iniciaBanco();//inicia o sqlite
 
   final publicRouter = Router()
+    ..get('/', (Request request) {
+      return Response.ok(jsonEncode({'status': 'ok'}), headers: {
+        'Content-Type': 'application/json'
+      });
+    })
     ..post('/logar', logar)
     ..post('/cadastroEventos', cadastroEventos)
     ..post('/cadastroEntidades', cadastroEntidades)
@@ -33,10 +39,7 @@ void main() async {
     ..get('/listarEntidades', listarEntidades)
     ..get('/listarEventos', listarEventos)
     ..get('/procuraEntidades', procuraEntidade)
-    ..get('/procuraEventos', procuraEventos)
-    ..get('/', (Request req) {
-    return Response.ok('API Tradicional rodando');
-    })
+    ..get('/procuraEventos', procuraEventos);
   ;
 
   final protectedRouter = Router()
