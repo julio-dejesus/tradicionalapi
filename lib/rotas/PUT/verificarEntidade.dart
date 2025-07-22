@@ -27,8 +27,13 @@ Future<Response> verificarEntidade(Request request) async {
     return Response.badRequest(body: jsonEncode({'erro': 'Corpo inválido. Esperado: {"verificado":"ok"}'}));
   }
 
+  final check = db.select('SELECT COUNT(*) AS total FROM Entidades WHERE id = ?', [int.parse(id)]);
+  if (check.first['total'] == 0) {
+    return Response.notFound(jsonEncode({'erro': 'Entidade com ID $id não existe'}));
+  }
+
   final stmt = db.prepare('UPDATE Entidades SET verificado = 1 WHERE id = ?');
-  stmt.execute([id]);
+  stmt.execute([int.parse(id)]);
   final changes = db.getUpdatedRows();
   stmt.dispose();
 
