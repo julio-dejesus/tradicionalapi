@@ -1,16 +1,30 @@
 import 'dart:convert';
 import 'package:shelf/shelf.dart';
-import '../../../database.dart';
+import '../../supabase_client.dart';
 
 Future<Response> deletarUsuario(Request request, String id) async {
-  final stmt = db.prepare('DELETE FROM Usuarios WHERE id = ?');
-  stmt.execute([id]);
-  final changes = db.getUpdatedRows();
-  stmt.dispose();
+  final result = await supabase
+  .from('usuarios')
+  .select('id')
+  .eq('id', int.parse(id))
+  .limit(1);
 
-  if (changes == 0) {
+  if (result.isEmpty) {
     return Response.notFound(
       jsonEncode({'erro': 'Usuário não encontrado.'}),
+      headers: {'Content-Type': 'application/json'},
+    );
+  }
+
+  try{
+    await supabase
+    .from('usuarios')
+    .delete()
+    .eq('id', int.parse(id));
+  }catch(e){
+    final errorMsg = e.toString();
+    return Response.internalServerError(
+      body: jsonEncode({'erro': 'Erro ao deletar usuário: $errorMsg'}),
       headers: {'Content-Type': 'application/json'},
     );
   }

@@ -11,7 +11,6 @@ import 'package:tradicional/rotas/POST/cadastroEntidades.dart';
 import 'package:tradicional/rotas/GET/listarEntidades.dart';
 import 'package:shelf/shelf.dart';
 import 'package:shelf/shelf_io.dart' as io;
-import 'package:tradicional/database.dart';
 import 'package:tradicional/rotas/POST/cadastroEventos.dart';
 import 'package:tradicional/rotas/POST/cadastroUsuarios.dart';
 import 'package:tradicional/rotas/POST/logar.dart';
@@ -23,7 +22,6 @@ import 'package:tradicional/rotas/PUT/verificarEvento.dart';
 import 'package:tradicional/verificarJWT.dart';
 
 void main() async {
-  iniciaBanco();//inicia o sqlite
 
   final publicRouter = Router()
     ..get('/', (Request request) {

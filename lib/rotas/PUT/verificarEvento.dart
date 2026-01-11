@@ -1,36 +1,42 @@
 import 'dart:convert';
 import 'package:shelf/shelf.dart';
-import '../../database.dart';
+import 'package:shelf_router/shelf_router.dart';
+import '../../supabase_client.dart';
 
 Future<Response> verificarEvento(Request request, String id) async {
+  final idParam = request.params['id'];
+  final id = int.tryParse(idParam ?? '');
 
-  // Lê e valida o corpo da requisição
-  final body = await request.readAsString();
-
-  if(body.trim().isEmpty){
-    return Response.badRequest(body: 'A requisição deve conter pelo menos uma especificação');
+  if (id == null) {
+    return Response.badRequest(
+      body: jsonEncode({'erro': 'ID inválido'}),
+      headers: {'Content-Type': 'application/json'});
   }
 
-  dynamic data;
-  try{
-    data = jsonDecode(body);
-  }catch(e){
-    return Response.badRequest(body: 'JSON inválido: ${e.toString()}');
+  final result = await supabase
+      .from('eventos')
+      .select('id')
+      .eq('id', id)
+      .limit(1);
+
+  if (result.isEmpty) {
+    return Response.notFound(
+      jsonEncode({'erro': 'Evento com ID $id não existe.'}),
+      headers: {'Content-Type': 'application/json'});
   }
 
-  if (data['verificado'] != 'ok') {
-    return Response.badRequest(body: jsonEncode({'erro': 'Corpo inválido. Esperado: {"verificado":"ok"}'}));
+  try {
+    await supabase
+        .from('eventos')
+        .update({'verificado': true})
+        .eq('id', id);
+  } catch (e) {
+    final errorMsg = e.toString();
+    return Response.internalServerError(body: 'Erro ao atualizar Supabase: $errorMsg');
   }
 
-  // Realiza o UPDATE
-  final stmt = db.prepare('UPDATE Eventos SET verificado = 1 WHERE id = ?');
-  stmt.execute([id]);
-  final changes = db.getUpdatedRows();
-  stmt.dispose();
+  return Response.ok(
+    jsonEncode({'mensagem': 'Evento verificado com sucesso'}),
+    headers: {'Content-Type': 'application/json'});
 
-  if (changes == 0) {
-    return Response.notFound(jsonEncode({'erro': 'Evento não encontrado'}));
-  }
-
-  return Response.ok(jsonEncode({'mensagem': 'Evento verificado com sucesso'}));
 }

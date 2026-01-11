@@ -1,16 +1,30 @@
 import 'dart:convert';
 import 'package:shelf/shelf.dart';
-import '../../../database.dart';
+import '../../supabase_client.dart';
 
 Future<Response> deletarEntidade(Request request, String id) async {
-  final stmt = db.prepare('DELETE FROM Entidades WHERE id = ?');
-  stmt.execute([id]);
-  final changes = db.getUpdatedRows();
-  stmt.dispose();
+  final result = await supabase
+  .from('entidades')
+  .select('id')
+  .eq('id', int.parse(id))
+  .limit(1);
 
-  if (changes == 0) {
+  if (result.isEmpty) {
     return Response.notFound(
       jsonEncode({'erro': 'Entidade não encontrada.'}),
+      headers: {'Content-Type': 'application/json'},
+    );
+  }
+
+  try{
+    await supabase
+    .from('entidades')
+    .delete()
+    .eq('id', int.parse(id));
+  }catch(e){
+    final errorMsg = e.toString();
+    return Response.internalServerError(
+      body: jsonEncode({'erro': 'Erro ao deletar entidade: $errorMsg'}),
       headers: {'Content-Type': 'application/json'},
     );
   }

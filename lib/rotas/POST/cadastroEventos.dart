@@ -1,7 +1,6 @@
 import 'dart:convert';
 import 'package:shelf/shelf.dart';
-import 'package:sqlite3/common.dart';
-import '../../database.dart';
+import '../../supabase_client.dart';
 
 Future<Response> cadastroEventos(Request request) async {
   final body = await request.readAsString();
@@ -13,12 +12,12 @@ Future<Response> cadastroEventos(Request request) async {
     return Response.badRequest(body: 'JSON inválido.');
   }
 
-  List<Map<String, dynamic>> eventos = [];
+  final List<Map<String, dynamic>> eventos = [];
 
   if (data is Map<String, dynamic>) {
     eventos.add(data);
   } else if (data is List) {
-    for (var item in data) {
+    for (final item in data) {
       if (item is Map<String, dynamic>) {
         eventos.add(item);
       } else {
@@ -29,26 +28,32 @@ Future<Response> cadastroEventos(Request request) async {
     return Response.badRequest(body: 'Formato JSON inválido. Esperado objeto ou lista de objetos.');
   }
 
-  final erros = [];
-  final inseridos = [];
+  final List<Map<String, dynamic>> erros = [];
+  final List<Map<String, dynamic>> inseridos = [];
 
   for (final evento in eventos) {
     final organizador = evento['organizador'];
-    final dataRealizacao = evento['dataRealizacao'];
-    final tipoEvento = evento['tipoEvento'];
-    final dataInscricao = evento['dataInscricao'];
+    final dataRealizacao = evento['data_realizacao'];
+    final tipoEvento = evento['tipo_evento'];
+    final dataInscricao = evento['data_inscricao'];
     final cidade = evento['cidade'];
     final endereco = evento['endereco'];
     final premio = evento['premio'];
     final contato = evento['contato'];
 
     // Validações
-    if (organizador == null || organizador == '' ||
-        dataRealizacao == null || dataRealizacao == '' ||
-        tipoEvento == null || tipoEvento == '' ||
-        cidade == null || cidade == '' ||
-        endereco == null || endereco == '' ||
-        contato == null || contato == '') {
+    if (organizador == null ||
+        organizador.toString().isEmpty ||
+        dataRealizacao == null || 
+        dataRealizacao .toString().isEmpty ||
+        tipoEvento == null || 
+        tipoEvento.toString().isEmpty ||
+        cidade == null || 
+        cidade.toString().isEmpty ||
+        endereco == null ||
+         endereco.toString().isEmpty ||
+        contato == null || 
+        contato.toString().isEmpty) {
       erros.add({
         'evento': evento,
         'erro': 'Campos obrigatórios ausentes.'
@@ -61,6 +66,11 @@ Future<Response> cadastroEventos(Request request) async {
         'evento': evento,
         'erro': 'Preencha a data limite de inscrição ou use null.'
       });
+    }else if (dataInscricao is! String || !dataInscricao.contains('-')) {
+      erros.add({
+        'evento': evento,
+        'erro': 'Campo "data_inscricao" deve estar no formato YYYY-MM-DD.'
+      });
       continue;
     }
 
@@ -72,55 +82,50 @@ Future<Response> cadastroEventos(Request request) async {
       continue;
     }
 
-    try {
-      final stmt = db.prepare('''
-        INSERT INTO Eventos (
-          organizador, dataRealizacao, tipoEvento, dataInscricao,
-          cidade, endereco, premio, contato
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-      ''');
+    if (dataRealizacao is! String || !dataRealizacao.contains('-')) {
+      erros.add({
+        'evento': evento,
+        'erro': 'Campo "data_realizacao" deve estar no formato YYYY-MM-DD.'
+      });
+      continue;
+    }
 
-      stmt.execute([
-        organizador,
-        dataRealizacao,
-        tipoEvento,
-        dataInscricao,
-        cidade,
-        endereco,
-        premio,
-        contato
-      ]);
-      stmt.dispose();
+    try {
+      await supabase.from('eventos').insert({
+        'organizador': organizador,
+        'data_realizacao': dataRealizacao,
+        'tipo_evento': tipoEvento,
+        'data_inscricao': dataInscricao,
+        'cidade': cidade,
+        'endereco': endereco,
+        'premio': premio,
+        'contato': contato,
+        'verificado': false,
+      });
 
       inseridos.add({
         'organizador': organizador,
-        'dataRealizacao': dataRealizacao,
-        'tipoEvento': tipoEvento
+        'data_realizacao': dataRealizacao,
       });
-    } on SqliteException catch (e) {
-      if (e.message.contains('UNIQUE')) {
-        erros.add({
-          'evento': evento,
-          'erro': 'Já existe um evento com esse tipo, data, organizador e endereço.'
-        });
-      } else {
-        erros.add({
-          'evento': evento,
-          'erro': 'Erro no banco de dados: ${e.message}'
-        });
-      }
     } catch (e) {
+      final errorMsg = e.toString();
       erros.add({
-        'evento': evento,
-        'erro': 'Erro inesperado: ${e.toString()}'
-      });
+          'evento': evento,
+          'erro': 'Erro ao inserir evento: $errorMsg'
+        });
     }
   }
 
   return Response.ok(
     jsonEncode({
-      'sucesso': inseridos,
-      'falhas': erros
+      'sucesso': erros.isEmpty,
+      'inseridos': inseridos,
+      'falhas': erros,
+      'summary': {
+        'total': eventos.length,
+        'inseridos': inseridos.length,
+        'falhas': erros.length,
+      }
     }),
     headers: {'Content-Type': 'application/json'},
   );
