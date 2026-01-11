@@ -1,26 +1,17 @@
 import 'dart:convert';
 import 'package:shelf/shelf.dart';
-import '../../database.dart';
+import '../../supabase_client.dart';
 
 Future<Response> listarEventos(Request request) async{
 
-  final result = db.select('SELECT id, organizador, dataRealizacao, tipoEvento, dataInscricao, cidade, endereco, premio, contato, verificado FROM Eventos WHERE verificado = 1');
-  final entidades = result.map((row) =>{
-    'id': row['id'],
-    'organizador': row['organizador'],
-    'dataRealizacao': row['dataRealizacao'],
-    'tipoEvento': row['tipoEvento'],
-    'dataInscricao': row['dataInscricao'],
-    'cidade': row['cidade'],
-    'endereco': row['endereco'],
-    'premio': row['premio'],
-    'contato': row['contato'],
-    'verificado': row['verificado']
-  }).toList();
-
+  final result = await supabase
+  .from('eventos')
+  .select('id, organizador, data_realizacao, tipo_evento, data_inscricao, cidade, endereco, premio, contato, verificado')
+  .eq('verificado', true);
+  
   return Response.ok(
-    jsonEncode(entidades),
+    jsonEncode(result),
     headers: {'Content-Type': 'application/json'},
-  );
+  ); 
 
 }

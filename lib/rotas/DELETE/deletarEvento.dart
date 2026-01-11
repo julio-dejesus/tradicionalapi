@@ -1,16 +1,30 @@
 import 'dart:convert';
 import 'package:shelf/shelf.dart';
-import '../../../database.dart';
+import '../../supabase_client.dart';
 
 Future<Response> deletarEvento(Request request, String id) async {
-  final stmt = db.prepare('DELETE FROM Eventos WHERE id = ?');
-  stmt.execute([id]);
-  final changes = db.getUpdatedRows();
-  stmt.dispose();
+  final result = await supabase
+  .from('eventos')
+  .select('id')
+  .eq('id', int.parse(id))
+  .limit(1);
 
-  if (changes == 0) {
+  if (result.isEmpty) {
     return Response.notFound(
       jsonEncode({'erro': 'Evento não encontrado.'}),
+      headers: {'Content-Type': 'application/json'},
+    );
+  }
+
+  try{
+    await supabase
+    .from('eventos')
+    .delete()
+    .eq('id', int.parse(id));
+  }catch(e){
+    final errorMsg = e.toString();
+    return Response.internalServerError(
+      body: jsonEncode({'erro': 'Erro ao deletar evento: $errorMsg'}),
       headers: {'Content-Type': 'application/json'},
     );
   }

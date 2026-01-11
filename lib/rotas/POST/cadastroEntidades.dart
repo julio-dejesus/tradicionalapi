@@ -1,7 +1,6 @@
 import 'dart:convert';
 import 'package:shelf/shelf.dart';
-import 'package:sqlite3/common.dart';
-import '../../database.dart';
+import '../../supabase_client.dart';
 
 Future<Response> cadastroEntidades(Request request) async {
   final body = await request.readAsString();
@@ -13,12 +12,12 @@ Future<Response> cadastroEntidades(Request request) async {
     return Response.badRequest(body: 'JSON inválido.');
   }
 
-  List<Map<String, dynamic>> entidades = [];
+  final List<Map<String, dynamic>> entidades = [];
 
   if (data is Map<String, dynamic>) {
     entidades.add(data);
   } else if (data is List) {
-    for (var item in data) {
+    for (final item in data) {
       if (item is Map<String, dynamic>) {
         entidades.add(item);
       } else {
@@ -26,7 +25,7 @@ Future<Response> cadastroEntidades(Request request) async {
       }
     }
   } else {
-    return Response.badRequest(body: 'Formato JSON inválido. Esperado objeto ou lista de objetos.');
+    return Response.badRequest(body: 'Formato JSON inválido. Esperado objeto ou lista.');
   }
 
   final erros = [];
@@ -41,27 +40,49 @@ Future<Response> cadastroEntidades(Request request) async {
     final endereco = entidade['endereco'];
 
     // Validação de campos obrigatórios
-    if (sigla == null || sigla == '' ||
-        nome == null || nome == '' ||
-        fundado == null || fundado == '' ||
-        rt == null || rt.toString().isEmpty ||
-        cidade == null || cidade == '') {
+    if (sigla == null || 
+        sigla.toString().isEmpty ||
+        nome == null || 
+        nome.toString().isEmpty ||
+        fundado == null || 
+        rt == null || 
+        cidade == null || 
+        cidade.toString().isEmpty) {
       erros.add({
         'entidade': entidade,
         'erro': 'Campos obrigatórios ausentes.'
       });
       continue;
     }
+    
+    if (fundado is! String || !fundado.contains('-')) {
+      erros.add({
+        'entidade': entidade,
+        'erro': 'Campo "fundado" deve estar no formato YYYY-MM-DD.'
+      });
+      continue;
+    }
 
     try {
-      final stmt = db.prepare(
-          'INSERT INTO Entidades (sigla, nome, fundado, rt, cidade, endereco) VALUES (?, ?, ?, ?, ?, ?);'
-      );
-      stmt.execute([sigla, nome, fundado, rt, cidade, endereco]);
-      stmt.dispose();
-      inseridas.add({'sigla': sigla, 'nome': nome, 'rt': rt});
-    } on SqliteException catch (e) {
-      if (e.message.contains('UNIQUE')) {
+      await supabase.from('entidades').insert({
+        'sigla': sigla,
+        'nome': nome,
+        'fundado': fundado,
+        'rt': rt,
+        'cidade': cidade,
+        'endereco': endereco,
+        'verificado': false
+      });
+
+      inseridas.add({
+        'sigla': sigla,
+         'nome': nome,
+          'rt': rt
+      });
+    } catch (e) {
+      final errorMsg = e.toString();
+
+      if (errorMsg.contains('23505')) {
         erros.add({
           'entidade': entidade,
           'erro': 'Já existe uma entidade com essa sigla, nome e RT.'
@@ -69,21 +90,22 @@ Future<Response> cadastroEntidades(Request request) async {
       } else {
         erros.add({
           'entidade': entidade,
-          'erro': 'Erro no banco de dados: ${e.message}'
+          'erro': 'Erro ao inserir entidade: $errorMsg'
         });
       }
-    } catch (e) {
-      erros.add({
-        'entidade': entidade,
-        'erro': 'Erro inesperado: ${e.toString()}'
-      });
     }
   }
 
   return Response.ok(
     jsonEncode({
-      'sucesso': inseridas,
-      'falhas': erros
+      'sucesso': erros.isEmpty,
+      'inseridas': inseridas,
+      'falhas': erros,
+      'summary': {
+        'total': entidades.length,
+        'inseridas': inseridas.length,
+        'falhas': erros.length,
+      }
     }),
     headers: {'Content-Type': 'application/json'},
   );

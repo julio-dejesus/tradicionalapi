@@ -1,45 +1,41 @@
 import 'dart:convert';
 import 'package:shelf/shelf.dart';
-import 'package:shelf_router/shelf_router.dart'; // necessário para usar request.params
-import '../../database.dart';
+import 'package:shelf_router/shelf_router.dart';
+import '../../supabase_client.dart';
 
 Future<Response> verificarEntidade(Request request) async {
-  final id = request.params['id'];
+  final idParam = request.params['id'];
+  final id = int.tryParse(idParam ?? '');
 
   if (id == null) {
-    return Response.badRequest(body: 'ID não fornecido');
+    return Response.badRequest(
+      body: jsonEncode({'erro': 'ID inválido'}),
+      headers: {'Content-Type': 'application/json'});
   }
 
-  final body = await request.readAsString();
+  final result = await supabase
+      .from('entidades')
+      .select('id')
+      .eq('id', id)
+      .limit(1);
 
-  if (body.trim().isEmpty) {
-    return Response.badRequest(body: 'A requisição deve conter pelo menos uma especificação');
+  if (result.isEmpty) {
+    return Response.notFound(
+      jsonEncode({'erro': 'Entidade com ID $id não existe.'}),
+      headers: {'Content-Type': 'application/json'});
   }
 
-  dynamic data;
   try {
-    data = jsonDecode(body);
+    await supabase
+        .from('entidades')
+        .update({'verificado': true})
+        .eq('id', id);
   } catch (e) {
-    return Response.badRequest(body: 'JSON inválido: ${e.toString()}');
+    final errorMsg = e.toString();
+    return Response.internalServerError(body: 'Erro ao atualizar Supabase: $errorMsg');
   }
 
-  if (data['verificado'] != 'ok') {
-    return Response.badRequest(body: jsonEncode({'erro': 'Corpo inválido. Esperado: {"verificado":"ok"}'}));
-  }
-
-  final check = db.select('SELECT COUNT(*) AS total FROM Entidades WHERE id = ?', [int.parse(id)]);
-  if (check.first['total'] == 0) {
-    return Response.notFound(jsonEncode({'erro': 'Entidade com ID $id não existe'}));
-  }
-
-  final stmt = db.prepare('UPDATE Entidades SET verificado = 1 WHERE id = ?');
-  stmt.execute([int.parse(id)]);
-  final changes = db.getUpdatedRows();
-  stmt.dispose();
-
-  if (changes == 0) {
-    return Response.notFound(jsonEncode({'erro': 'Entidade não encontrada'}));
-  }
-
-  return Response.ok(jsonEncode({'mensagem': 'Entidade verificada com sucesso'}));
+  return Response.ok(
+    jsonEncode({'mensagem': 'Entidade verificada com sucesso'}),
+    headers: {'Content-Type': 'application/json'});
 }

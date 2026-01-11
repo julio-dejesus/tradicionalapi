@@ -1,21 +1,15 @@
 import 'dart:convert';
 import 'package:shelf/shelf.dart';
-import '../../database.dart';
+import '../../supabase_client.dart';
 
 Future<Response> listarUsuarios(Request request) async{
 
-  final result = db.select('SELECT id, nome, login, email, senha, admin FROM Usuarios');
-  final usuarios = result.map((row) =>{
-    'id': row['id'],
-    'nome': row['nome'],
-    'login': row['login'],
-    'email': row['email'],
-    'senha': row['senha'],
-    'admin': row['admin']
-  }).toList();
+  final result = await supabase
+  .from('usuarios')
+  .select('id, nome, login, email, senha, admin');
 
   return Response.ok(
-    jsonEncode(usuarios),
+    jsonEncode(result),
     headers: {'Content-Type': 'application/json'},
   );
 
