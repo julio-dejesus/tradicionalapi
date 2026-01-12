@@ -5,7 +5,7 @@ import '../../supabase_client.dart';
 Future<Response> entidadesVerificar(Request request) async{
 
   final result = await supabase
-  .from('Entidades')
+  .from('entidades')
   .select(
     'id, sigla, nome, fundado, rt, cidade, endereco, verificado')
     .eq('verificado', false);
