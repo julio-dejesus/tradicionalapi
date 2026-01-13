@@ -51,7 +51,7 @@ Future<Response> cadastroEventos(Request request) async {
         cidade == null || 
         cidade.toString().isEmpty ||
         endereco == null ||
-         endereco.toString().isEmpty ||
+        endereco.toString().isEmpty ||
         contato == null || 
         contato.toString().isEmpty) {
       erros.add({
