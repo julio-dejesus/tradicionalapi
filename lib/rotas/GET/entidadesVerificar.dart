@@ -4,6 +4,8 @@ import '../../supabase_client.dart';
 
 Future<Response> entidadesVerificar(Request request) async{
 
+  await supabase.rpc("atualiza_ultima_requisicao");
+
   final result = await supabase
   .from('entidades')
   .select(

@@ -4,6 +4,8 @@ import '../../supabase_client.dart';
 
 Future<Response> listarEventos(Request request) async{
 
+  await supabase.rpc("atualiza_ultima_requisicao");
+
   final result = await supabase
   .from('eventos')
   .select('id, organizador, data_realizacao, tipo_evento, data_inscricao, cidade, endereco, premio, contato, verificado')

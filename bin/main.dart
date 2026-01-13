@@ -7,6 +7,7 @@ import 'package:tradicional/rotas/GET/listarEventos.dart';
 import 'package:tradicional/rotas/GET/listarUsuarios.dart';
 import 'package:tradicional/rotas/GET/procuraEntidade.dart';
 import 'package:tradicional/rotas/GET/procuraEventos.dart';
+import 'package:tradicional/rotas/GET/usoSistema.dart';
 import 'package:tradicional/rotas/POST/cadastroEntidades.dart';
 import 'package:tradicional/rotas/GET/listarEntidades.dart';
 import 'package:shelf/shelf.dart';
@@ -37,7 +38,8 @@ void main() async {
     ..get('/listarEntidades', listarEntidades)
     ..get('/listarEventos', listarEventos)
     ..get('/procuraEntidades', procuraEntidade)
-    ..get('/procuraEventos', procuraEventos);
+    ..get('/procuraEventos', procuraEventos)
+    ..get('/usoSistema', usoSistema);
   ;
 
   final protectedRouter = Router()

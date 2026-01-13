@@ -40,6 +40,8 @@ Future<Response> procuraEntidade(Request request) async {
     );
   }
 
+  await supabase.rpc("atualiza_ultima_requisicao");
+
   final result = await query;
 
   return Response.ok(
