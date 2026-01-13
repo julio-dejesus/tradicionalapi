@@ -47,7 +47,12 @@ Future<Response> procuraEntidade(Request request) async {
     print(stack);
   }
 
-  final result = await query;
+  try {
+    final result = await query;
+  } catch (e, stack) {
+    print('ERRO na requisição: $e');
+    print(stack);
+  }
 
   return Response.ok(
     jsonEncode(result),
