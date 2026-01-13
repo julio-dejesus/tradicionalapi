@@ -16,6 +16,7 @@ Middleware verificarJWTMiddleware() {
     'listarEventos',
     'procuraEntidades',
     'procuraEventos',
+    'usoSistema',
   };
 
   return (Handler innerHandler) {
