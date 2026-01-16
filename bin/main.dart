@@ -22,6 +22,33 @@ import 'package:tradicional/rotas/PUT/verificarEntidade.dart';
 import 'package:tradicional/rotas/PUT/verificarEvento.dart';
 import 'package:tradicional/verificarJWT.dart';
 
+Middleware corsMiddleware() {
+  return (Handler handler) {
+    return (Request request) async {
+
+      if (request.method == 'OPTIONS') {
+        return Response.ok(
+          '',
+          headers: {
+            'Access-Control-Allow-Origin': '*',
+            'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+            'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+          },
+        );
+      }
+
+      final response = await handler(request);
+
+      return response.change(headers: {
+        ...response.headers,
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+        'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+      });
+    };
+  };
+}
+
 void main() async {
 
   final publicRouter = Router()
@@ -52,10 +79,12 @@ void main() async {
     ..put('/verificarEvento/<id>', verificarEvento);
 
   final publicHandler = Pipeline()
+      .addMiddleware(corsMiddleware())
       .addMiddleware(logRequests())
       .addHandler(publicRouter);
 
   final protectedHandler = Pipeline()
+      .addMiddleware(corsMiddleware())
       .addMiddleware(logRequests())
       .addMiddleware(verificarJWTMiddleware())
       .addHandler(protectedRouter);
