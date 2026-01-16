@@ -76,8 +76,9 @@ Future<Response> cadastroEntidades(Request request) async {
 
       inseridas.add({
         'sigla': sigla,
-         'nome': nome,
-          'rt': rt
+        'nome': nome,
+        'rt': rt,
+        'cidade' : cidade,  
       });
     } catch (e) {
       final errorMsg = e.toString();
@@ -85,7 +86,7 @@ Future<Response> cadastroEntidades(Request request) async {
       if (errorMsg.contains('23505')) {
         erros.add({
           'entidade': entidade,
-          'erro': 'Já existe uma entidade com essa sigla, nome e RT.'
+          'erro': 'Já existe uma entidade com essa sigla, nome, rt e cidade.'
         });
       } else {
         erros.add({

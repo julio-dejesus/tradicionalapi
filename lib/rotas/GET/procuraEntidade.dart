@@ -24,15 +24,23 @@ Future<Response> procuraEntidade(Request request) async {
   bool temFiltros = false;
 
   for (var campo in camposValidos) {
-    if (data.containsKey(campo) && data[campo] != null && data[campo].toString().isNotEmpty) {
-      temFiltros = true;
-      } 
-    if (['id', 'rt', 'fundado'].contains(campo)) {
-        query = query.eq(campo, data[campo]);
-      }else {
-        query = query.ilike(campo, '%${data[campo]}%');
-      }
-      }
+  if (!data.containsKey(campo) ||
+      data[campo] == null ||
+      data[campo].toString().isEmpty) {
+    continue;
+  }
+
+  temFiltros = true;
+
+  if (['id', 'rt'].contains(campo)) {
+    query = query.eq(campo, data[campo]);
+  } else if (campo == 'fundado') {
+    query = query.eq(campo, data[campo]); // se for date exata
+  } else {
+    query = query.ilike(campo, '%${data[campo]}%');
+  }
+}
+
   
   if (!temFiltros) {
     return Response.badRequest(
@@ -40,9 +48,14 @@ Future<Response> procuraEntidade(Request request) async {
     );
   }
 
-  await supabase.rpc("atualiza_ultima_requisicao");
+    try {
+    await supabase.rpc('atualiza_ultima_requisicao');
+  } catch (e, stack) {
+    print('ERRO na RPC atualiza_ultima_requisicao: $e');
+    print(stack);
+  }
 
-  final result = await query;
+    final result = await query;
 
   return Response.ok(
     jsonEncode(result),
