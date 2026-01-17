@@ -14,7 +14,8 @@ Future<Response> listarEventos(Request request) async{
   final result = await supabase
   .from('eventos')
   .select('id, organizador, data_realizacao, tipo_evento, data_inscricao, cidade, endereco, premio, contato, verificado')
-  .eq('verificado', true);
+  .eq('verificado', true)
+  .limit(100);
   
   return Response.ok(
     jsonEncode(result),

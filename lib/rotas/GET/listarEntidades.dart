@@ -14,7 +14,8 @@ Future<Response> listarEntidades(Request request) async{
   final result = await supabase
   .from('entidades')
   .select('id, sigla, nome, fundado, rt, cidade, endereco, verificado')
-  .eq('verificado', true);
+  .eq('verificado', true)
+  .limit(100);
   
   return Response.ok(
     jsonEncode(result),
