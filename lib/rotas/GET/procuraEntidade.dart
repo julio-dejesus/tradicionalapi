@@ -1,61 +1,62 @@
 import 'dart:convert';
+
 import 'package:shelf/shelf.dart';
-import '../../supabase_client.dart';
+import 'package:tradicional/supabase_client.dart';
 
 Future<Response> procuraEntidade(Request request) async {
-  final body = await request.readAsString();
+  final params = request.url.queryParameters;
 
-  if(body.trim().isEmpty){
-    return Response.badRequest(body: 'A requisição deve conter pelo menos uma especificação');
+  if (params.isEmpty) {
+    return Response.badRequest(
+      body: 'A requisição deve conter pelo menos uma especificação',
+    );
   }
 
-  Map<String, dynamic> data;
-  try{
-    data = jsonDecode(body);
-  }catch(e){
-    return Response.badRequest(body: 'JSON inválido: ${e.toString()}');
-  }
+  final camposValidos = [
+    'id',
+    'sigla',
+    'nome',
+    'fundado',
+    'rt',
+    'cidade',
+    'endereco'
+  ];
 
-  // Não irá filtrar por "verificado" pois este tem uma classe específica.
-  final camposValidos = ['id', 'sigla', 'nome', 'fundado', 'rt', 'cidade', 'endereco'];
+  var query = supabase
+      .from('entidades')
+      .select('id, sigla, nome, fundado, rt, cidade, endereco, verificado');
 
-  var query = supabase.from('entidades').select('id, sigla, nome, fundado, rt, cidade, endereco, verificado');
-  
   bool temFiltros = false;
 
   for (var campo in camposValidos) {
-  if (!data.containsKey(campo) ||
-      data[campo] == null ||
-      data[campo].toString().isEmpty) {
-    continue;
+    final valor = params[campo];
+
+    if (valor == null || valor.isEmpty) continue;
+
+    temFiltros = true;
+
+    if (['id', 'rt'].contains(campo)) {
+      query = query.eq(campo, valor);
+    } else if (campo == 'fundado') {
+      query = query.eq(campo, valor);
+    } else {
+      query = query.ilike(campo, '%$valor%');
+    }
   }
 
-  temFiltros = true;
-
-  if (['id', 'rt'].contains(campo)) {
-    query = query.eq(campo, data[campo]);
-  } else if (campo == 'fundado') {
-    query = query.eq(campo, data[campo]); // se for date exata
-  } else {
-    query = query.ilike(campo, '%${data[campo]}%');
-  }
-}
-
-  
   if (!temFiltros) {
     return Response.badRequest(
       body: 'A requisição deve conter pelo menos uma especificação',
     );
   }
 
-    try {
+  try {
     await supabase.rpc('atualiza_ultima_requisicao');
-  } catch (e, stack) {
-    print('ERRO na RPC atualiza_ultima_requisicao: $e');
-    print(stack);
+  } catch (e) {
+    print('Erro RPC: $e');
   }
 
-    final result = await query;
+  final result = await query;
 
   return Response.ok(
     jsonEncode(result),
