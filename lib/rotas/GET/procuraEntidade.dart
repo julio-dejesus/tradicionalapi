@@ -24,7 +24,8 @@ Future<Response> procuraEntidade(Request request) async {
 
   var query = supabase
       .from('entidades')
-      .select('id, sigla, nome, fundado, rt, cidade, endereco, verificado');
+      .select('id, sigla, nome, fundado, rt, cidade, endereco, verificado')
+      .eq('verificado', true);
 
   bool temFiltros = false;
 
